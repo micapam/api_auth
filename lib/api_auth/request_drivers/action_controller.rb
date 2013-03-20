@@ -74,8 +74,35 @@ module ApiAuth
 
     private
 
-      def find_header(keys)
+      def orig_find_header(keys)
         keys.map {|key| @headers[key] }.compact.first
+      end      
+      
+      def find_header(keys)
+        modified_keys = []
+        keys.each do |key|
+          alt = alternative_header_names[key]
+          modified_keys << alt.nil? ? key : alt
+        end
+
+        val = orig_find_header(modified_keys)
+        puts "I was asked for #{keys} (i.e. #{modified_keys}) and I found #{val}"
+        val
+      end
+
+      def alternative_header_names
+        @alth ||= find_alternative_header_names
+      end
+
+      def find_alternative_header_names
+        header_str = orig_find_header(%w(X-ALTERNATIVE-HEADERS))
+        if header_str.nil?
+          {}
+        else
+          header_names = Rack::Utils.parse_nested_query(header_str)
+          puts "I parsed #{header_str} and I got #{header_names}"
+          header_names
+        end
       end
 
     end
